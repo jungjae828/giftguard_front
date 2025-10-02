@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 고른 사진 미리보기 -->
+    <ImageView
+        android:id="@+id/imagePreview"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:background="#EEEEEE"
+        android:scaleType="centerCrop" />
+
+    <!-- 갤러리에서 사진 선택 -->
+    <Button
+        android:id="@+id/btnPick"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="갤러리에서 이미지 선택"
+        android:layout_marginTop="12dp" />
+
+    <!-- OCR 실행 -->
+    <Button
+        android:id="@+id/btnRecognize"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="텍스트 인식 실행"
+        android:layout_marginTop="8dp" />
+
+    <!-- 결과 표시 -->
+    <TextView
+        android:id="@+id/tvResult"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:layout_weight="1"
+        android:textSize="14sp"
+        android:textColor="#222222" />
+
+    <!-- 결과 복사 -->
+    <Button
+        android:id="@+id/btnCopy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="복사"
+        android:layout_marginTop="8dp" />
+
+</LinearLayout>

@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">GiftGuard</string>
+    <string name="title_activity_maps">MapsActivity</string>
+    <string name="title_activity_ocr">OcrActivity</string>
+   
+
+</resources>
