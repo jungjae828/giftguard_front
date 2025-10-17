@@ -26,6 +26,9 @@ import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.GeofenceStatusCodes
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -43,6 +46,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private val GEOFENCE_RADIUS_IN_METERS = 100f
     private val GEOFENCE_REQUEST_CODE = 2609
 
+    // 🌟 알림 권한 요청 런처 추가
+    private val requestNotificationPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Log.d(TAG, "알림 권한 허용됨.")
+        } else {
+            Log.w(TAG, "알림 권한 거부됨. 새로운 기프티콘 감지 알림을 받을 수 없습니다.")
+            Toast.makeText(this, "알림 권한이 없어 기프티콘 자동 감지 알림을 받을 수 없습니다.", Toast.LENGTH_LONG).show()
+        }
+    }
+
     private val requestLocationPerms = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
@@ -52,11 +67,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         } else true
 
         if (fineLocationGranted && backgroundLocationGranted) {
-            // ✅ 권한이 모두 허용된 경우: 안전한 함수 호출
             Log.d(TAG, "모든 위치 권한 허용됨. 맵에 내 위치 표시 및 지오펜스 등록 시작.")
-            activateMyLocationAndGeofence() // 🚨 새롭게 추가된 안전 호출 함수
+            activateMyLocationAndGeofence()
         } else {
-            // ❌ 권한이 부족한 경우
             Toast.makeText(this, "⚠️ 지오펜싱을 위해 '항상 허용' 권한이 필요합니다. 설정에서 변경해주세요.", Toast.LENGTH_LONG).show()
 
             val intent = Intent(
@@ -72,9 +85,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ... (onCreate 내용 유지)
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // 🌟 onCreate에서 알림 권한 확인 및 요청
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
         geofencingClient = LocationServices.getGeofencingClient(this)
 
@@ -83,15 +102,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             startActivity(intent)
         }
 
+        binding.apiTestButton.setOnClickListener {
+            Log.d(TAG, "API Test Button Clicked. Starting simple check.")
+            fetchSimpleCheck()
+        }
+
+        // ImageObserverService 시작
+        startService(Intent(this, ImageObserverService::class.java))
+
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
-        map = googleMap // 🚨 map 초기화 완료
+        map = googleMap
 
-        // ... (onMapReady 나머지 내용 유지)
         map.uiSettings.isZoomControlsEnabled = true
         map.uiSettings.isCompassEnabled = true
         map.uiSettings.isMapToolbarEnabled = true
@@ -103,28 +129,50 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         )
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(GEOFENCE_LATLNG, 14f))
 
-        // 권한 확인 및 지오펜스 등록 시작
         checkLocationPermissions()
     }
 
-    /**
-     * 🚨 새롭게 추가된 함수: 권한 획득 후 내 위치 표시 및 지오펜싱 등록을 안전하게 처리
-     */
-    @SuppressLint("MissingPermission") // 이 함수 내에서 권한을 확인하고 실행한다고 컴파일러에 명시
+    // =========================================================================
+    // Retrofit GET 요청 함수
+    // =========================================================================
+    private fun fetchSimpleCheck() {
+        Log.d(TAG, "Retrofit Simple Check 요청 시작 (Target: ${RetrofitClient.BASE_URL})")
+
+        RetrofitClient.apiService.getSimpleCheck().enqueue(object : Callback<String> {
+
+            override fun onResponse(call: Call<String>, response: Response<String>) {
+                if (response.isSuccessful) {
+                    val messageBody = response.body() ?: "응답 본문 없음"
+                    Log.d(TAG, "✅ 통신 성공! (HTTP Code: ${response.code()}, Body: $messageBody)")
+                    Toast.makeText(this@MapsActivity, "서버 응답: $messageBody", Toast.LENGTH_LONG).show()
+                } else {
+                    val errorBody = response.errorBody()?.string() ?: "알 수 없음"
+                    Log.e(TAG, "❌ 통신 실패: HTTP Code ${response.code()}, Error: $errorBody")
+                    Toast.makeText(this@MapsActivity, "통신 실패: Code ${response.code()}", Toast.LENGTH_LONG).show()
+                }
+            }
+
+            override fun onFailure(call: Call<String>, t: Throwable) {
+                val errorMessage = "❌ 네트워크 오류: ${t.message}"
+                Log.e(TAG, errorMessage)
+                Toast.makeText(this@MapsActivity, "네트워크 오류 발생: ${t.message}", Toast.LENGTH_LONG).show()
+            }
+        })
+    }
+    // =========================================================================
+
+    @SuppressLint("MissingPermission")
     private fun activateMyLocationAndGeofence() {
-        // 권한이 부여되었는지 최종 확인하고 실행 (방어적인 코드)
         val fineGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
-        if (::map.isInitialized && fineGranted) { // 🚨 map 초기화 여부와 권한을 다시 한 번 체크
-            map.isMyLocationEnabled = true // 🚨 오류 발생 지점: 이제 안전하게 호출
+        if (::map.isInitialized && fineGranted) {
+            map.isMyLocationEnabled = true
             addGeofence()
         } else {
             Log.e(TAG, "Map이 초기화되지 않았거나 위치 권한이 부족하여 내 위치를 활성화할 수 없습니다.")
         }
     }
 
-
-    // 🚨 권한 확인 함수: 기존 로직에서 map.isMyLocationEnabled 호출을 분리
     private fun checkLocationPermissions() {
         val fineGranted = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val backgroundRequired = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
@@ -133,10 +181,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         } else true
 
         if (fineGranted && backgroundGranted) {
-            // 권한이 이미 있음: 지오펜스 등록 및 내 위치 활성화 (안전 함수 호출)
             activateMyLocationAndGeofence()
         } else {
-            // 권한 요청
             val permissionsToRequest = mutableListOf<String>()
             if (!fineGranted) permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
             if (backgroundRequired && !backgroundGranted) permissionsToRequest.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
@@ -144,8 +190,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             requestLocationPerms.launch(permissionsToRequest.toTypedArray())
         }
     }
-
-    // ... (나머지 코드: createGeofencePendingIntent, getErrorString, createGeofenceRequest, addGeofence 유지)
 
     private fun createGeofencePendingIntent(): PendingIntent {
         val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
@@ -177,7 +221,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     @SuppressLint("MissingPermission")
     private fun addGeofence() {
-        // 권한 체크는 checkLocationPermissions에서 이미 처리되었으나, 혹시 모를 경우를 대비해 Log로 경고만 남김.
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.e(TAG, "addGeofence 호출 시점에 FINE_LOCATION 권한이 없습니다. 등록 실패 예상.")
             return

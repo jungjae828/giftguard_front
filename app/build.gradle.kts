@@ -78,5 +78,11 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.0.1")
 // 최신 버전 확인 권장
 
-
+// Retrofit 라이브러리 추가 (최신 버전 확인 필요)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+// Gson 변환기 추가 (JSON 데이터를 Kotlin/Java 객체로 자동 변환)
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+// 선택 사항: 통신 로그를 보기 위한 OkHttp Logging Interceptor
+// implementation 'com.squareup.okhttp3:logging-interceptor:4.9.0'
+    implementation("com.squareup.retrofit2:converter-scalars:2.9.0") //
 }
