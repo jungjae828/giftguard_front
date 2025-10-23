@@ -77,6 +77,8 @@ dependencies {
     // 🚨 지오펜싱(Location API) 의존성 추가 🚨
     implementation("com.google.android.gms:play-services-location:21.0.1")
 // 최신 버전 확인 권장
+    // Kotlin Coroutines 사용을 위한 종속성 (서비스 코드에서 사용됨)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3") // 또는 최신 버전
 
 // Retrofit 라이브러리 추가 (최신 버전 확인 필요)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -85,4 +87,5 @@ dependencies {
 // 선택 사항: 통신 로그를 보기 위한 OkHttp Logging Interceptor
 // implementation 'com.squareup.okhttp3:logging-interceptor:4.9.0'
     implementation("com.squareup.retrofit2:converter-scalars:2.9.0") //
+    implementation("com.google.mlkit:vision-common:17.3.0")
 }
