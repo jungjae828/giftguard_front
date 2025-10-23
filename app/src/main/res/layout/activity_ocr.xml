@@ -8,7 +8,8 @@
     <ImageView
         android:id="@+id/imagePreview"
         android:layout_width="match_parent"
-        android:layout_height="180dp"  android:background="#EEEEEE"
+        android:layout_height="180dp"
+        android:background="#EEEEEE"
         android:scaleType="centerCrop" />
 
     <LinearLayout
@@ -49,7 +50,7 @@
         android:layout_height="wrap_content"
         android:minHeight="60dp"
         android:padding="8dp"
-          android:textSize="14sp"
+        android:textSize="14sp"
         android:textColor="#222222" />
 
     <LinearLayout
@@ -64,7 +65,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="OCR 결과 저장"
-            android:enabled="false"  android:layout_marginEnd="4dp" />
+            android:enabled="false"
+            android:layout_marginEnd="4dp" />
 
         <Button
             android:id="@+id/btnCopy"
@@ -83,9 +85,12 @@
         android:text="저장된 기프티콘 목록 보기"
         android:layout_marginTop="12dp" />
 
-    <View
+    <!-- 버튼 바로 아래에 목록을 펼칠 영역 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerGifticons"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:visibility="gone" />
 
 </LinearLayout>
