@@ -6,7 +6,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory
 
 object RetrofitClient {
 
-    const val BASE_URL = "http://172.16.83.150:8080/"
+    const val BASE_URL = "http://172.16.82.38:8080/"
 
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
